@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Trip;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
 
 class TripController extends Controller
 {
@@ -34,7 +36,13 @@ class TripController extends Controller
             'travel_style' => ['nullable','string','max:50'],
             'pace' => ['nullable','string','max:50'],
             'is_public' => ['nullable','boolean'],
+            'image' => 'nullable|image|max:2048',
+
         ]);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('trips', 'public');
+        }
 
         $trip = Trip::create([
             ...$data,
@@ -70,7 +78,18 @@ class TripController extends Controller
             'travel_style' => ['nullable','string','max:50'],
             'pace' => ['nullable','string','max:50'],
             'is_public' => ['nullable','boolean'],
+            'image' => 'nullable|image|max:2048',
+
         ]);
+        if ($request->hasFile('image')) {
+    
+        if ($trip->image) {
+            Storage::disk('public')->delete($trip->image);
+        }
+
+        $data['image'] = $request->file('image')->store('trips', 'public');
+        }
+
 
         $trip->update($data);
 
