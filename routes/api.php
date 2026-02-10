@@ -47,4 +47,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai/plan', [AiPlanController::class, 'generate']);
 
     Route::post('/ai/plan-and-apply', [AiPlanController::class, 'planAndApply']);
+    Route::get('/ping', function () {
+    return response()->json(['ok' => true]);
+});
+Route::get('/gemini-models', [\App\Http\Controllers\AiPlanController::class, 'listGeminiModels']);
+
 });
