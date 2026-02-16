@@ -35,3 +35,4 @@ class LikeController extends Controller
 }
 
 }
+
