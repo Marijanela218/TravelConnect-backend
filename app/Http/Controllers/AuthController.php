@@ -29,6 +29,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('api')->plainTextToken;
 
+        $user->load('roles:id,name');
+
         return response()->json([
             'user' => $user,
             'token' => $token,
@@ -58,6 +60,9 @@ class AuthController extends Controller
 
         $token = $user->createToken('api')->plainTextToken;
 
+        $user->load('roles:id,name');
+
+
         return response()->json([
             'user' => $user,
             'token' => $token,
@@ -66,14 +71,18 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
+        
+
+
         return response()->json([
-            'user' => $request->user(),
+            'user' => $request->user()->load('roles:id,name'),
         ]);
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+
 
         return response()->json([
             'message' => 'Odjavljen.',

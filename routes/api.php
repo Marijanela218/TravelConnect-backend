@@ -8,8 +8,11 @@ use App\Http\Controllers\ItineraryItemController;
 use App\Http\Controllers\TripForkController;
 use App\Http\Controllers\TripPostController;
 use App\Http\Controllers\LikeController;
-use App\Http\Controllers\CommentController;
 use App\Http\Controllers\AiPlanController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\SuperAdminDashboardController;
+use App\Http\Controllers\Admin\AdminUsersController;
+use App\Http\Controllers\Admin\SuperAdminRolesController;
 
 
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -47,9 +50,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai/plan', [AiPlanController::class, 'generate']);
 
     Route::post('/ai/plan-and-apply', [AiPlanController::class, 'planAndApply']);
-    Route::get('/ping', function () {
-    return response()->json(['ok' => true]);
+    
 });
-Route::get('/gemini-models', [\App\Http\Controllers\AiPlanController::class, 'listGeminiModels']);
 
-});
+Route::middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->prefix('admin')
+    ->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+        Route::get('/users', [AdminUsersController::class, 'index']); // admin vidi user list
+    });
+
+    Route::middleware(['auth:sanctum', 'role:super_admin'])
+    ->prefix('super-admin')
+    ->group(function () {
+        Route::get('/dashboard', [SuperAdminDashboardController::class, 'index']);
+        Route::post('/users/{user}/roles', [SuperAdminRolesController::class, 'sync']); // superadmin dodjeljuje role
+    });

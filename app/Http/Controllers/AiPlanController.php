@@ -105,7 +105,7 @@ class AiPlanController extends Controller
                 abort(403, 'Ne možeš primijeniti AI plan na tuđe putovanje.');
             }
 
-            $replace = $data['replace'] ?? true;
+            $replace = $data['replace'] ?? false;
 
             $promptJson = [
                 'destination' => $data['destination'],
@@ -171,6 +171,7 @@ class AiPlanController extends Controller
             return response()->json([
                 'message' => 'AI plan primijenjen na putovanje.',
                 'ai_generation_id' => $result['ai_generation_id'],
+                'plan' => $plan,
                 'trip' => $trip->fresh()->load('days.items'),
             ], 201);
 
