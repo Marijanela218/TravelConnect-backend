@@ -60,7 +60,7 @@ Route::middleware(['auth:sanctum', 'role:admin,super_admin'])
         Route::get('/users', [AdminUsersController::class, 'index']); // admin vidi user list
     });
 
-    Route::middleware(['auth:sanctum', 'role:super_admin'])
+Route::middleware(['auth:sanctum', 'role:super_admin'])
     ->prefix('super-admin')
     ->group(function () {
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index']);
