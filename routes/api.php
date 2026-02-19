@@ -65,4 +65,5 @@ Route::middleware(['auth:sanctum', 'role:super_admin'])
     ->group(function () {
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index']);
         Route::post('/users/{user}/roles', [SuperAdminRolesController::class, 'sync']); // superadmin dodjeljuje role
+         Route::delete('/users/{user}', [SuperAdminRolesController::class, 'destroy']);
     });
