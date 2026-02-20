@@ -67,7 +67,7 @@ class TripController extends Controller
     // PUT /api/trips/{trip}
     public function update(Request $request, Trip $trip)
     {
-        $this->authorizeOwner($request, $trip);
+        $this->authorizeOwnerOrAdmin($request, $trip);
 
         $data = $request->validate([
             'title' => ['sometimes','required','string','max:255'],
@@ -100,7 +100,7 @@ class TripController extends Controller
     // DELETE /api/trips/{trip}
     public function destroy(Request $request, Trip $trip)
     {
-        $this->authorizeOwner($request, $trip);
+        $this->authorizeOwnerOrAdmin($request, $trip);
 
         $trip->delete();
 
@@ -113,4 +113,22 @@ class TripController extends Controller
             abort(403, 'Nemaš pravo uređivati ovo putovanje.');
         }
     }
+
+    private function authorizeOwnerOrAdmin(Request $request, Trip $trip): void
+{
+    $user = $request->user()->loadMissing('roles:id,name'); // ✅ učitaj roles ako nisu
+
+    $isOwner = $trip->user_id === $user->id;
+
+    $roleNames = $user->roles ? $user->roles->pluck('name')->all() : [];
+    $isAdminRole = in_array('admin', $roleNames, true) || in_array('super_admin', $roleNames, true);
+
+    $isAdminType = in_array($user->user_type, ['admin', 'super_admin'], true);
+
+    if (!$isOwner && !$isAdminRole && !$isAdminType) {
+        abort(403, 'Nemaš pravo uređivati/brisati ovo putovanje.');
+    }
+}
+
+
 }

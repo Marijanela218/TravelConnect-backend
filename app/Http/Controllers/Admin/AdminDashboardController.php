@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Trip;
 use App\Models\TripPost;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdminDashboardController extends Controller
 {
@@ -17,4 +19,6 @@ class AdminDashboardController extends Controller
             'posts_count' => TripPost::count(),
         ]);
     }
+    
+  
 }
