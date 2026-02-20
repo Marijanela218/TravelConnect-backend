@@ -9,22 +9,23 @@ use Illuminate\Http\Request;
 class TripPostController extends Controller
 {
     public function index(Request $request)
-    {
-        $userId = optional($request->user())->id;
-        $posts = TripPost::query()
-            ->with([
-                'user:id,username',
-                'trip:id,title,destination,is_public,user_id',
-            ])
-            ->withCount('likes')
-            ->when($userId, fn ($q) =>
+{
+    $userId = optional($request->user())->id;
+
+    $posts = TripPost::query()
+        ->with([
+            'user:id,username',
+            'trip:id,title,destination,is_public,user_id,image', // ✅ DODANO image
+        ])
+        ->withCount('likes')
+        ->when($userId, fn ($q) =>
             $q->withExists(['likes as liked' => fn ($qq) => $qq->where('user_id', $userId)])
         )
-            ->orderByDesc('id')
-            ->get();
+        ->orderByDesc('id')
+        ->get();
 
-        return response()->json(['posts' => $posts]);
-    }
+    return response()->json(['posts' => $posts]);
+}
 
     public function store(Request $request)
     {
@@ -48,7 +49,7 @@ class TripPostController extends Controller
         // Vrati sve što treba frontu + likes_count (0)
         $post->load([
             'user:id,username',
-            'trip:id,title,destination,is_public,user_id'
+            'trip:id,title,destination,is_public,user_id,image',
         ])->loadCount('likes');
 
         return response()->json([
