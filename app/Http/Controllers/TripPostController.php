@@ -15,7 +15,7 @@ class TripPostController extends Controller
     $posts = TripPost::query()
         ->with([
             'user:id,username',
-            'trip:id,title,destination,is_public,user_id,image', // ✅ DODANO image
+            'trip:id,title,destination,is_public,user_id,image', 
         ])
         ->withCount('likes')
         ->when($userId, fn ($q) =>
@@ -46,7 +46,7 @@ class TripPostController extends Controller
             'caption' => $data['caption'] ?? null,
         ]);
 
-        // Vrati sve što treba frontu + likes_count (0)
+        
         $post->load([
             'user:id,username',
             'trip:id,title,destination,is_public,user_id,image',

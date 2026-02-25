@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 
 class ItineraryDayController extends Controller
 {
-    // POST /api/trips/{trip}/days
+    
     public function store(Request $request, Trip $trip)
     {
-        // samo vlasnik može dodavati dane
+       
         if ($trip->user_id !== $request->user()->id) {
             abort(403, 'Nemaš pravo mijenjati ovo putovanje.');
         }
@@ -30,7 +30,7 @@ class ItineraryDayController extends Controller
         return response()->json(['day' => $day], 201);
     }
 
-    // PUT /api/days/{day}
+    
     public function update(Request $request, ItineraryDay $day)
     {
         $trip = $day->trip;
@@ -50,7 +50,7 @@ class ItineraryDayController extends Controller
         return response()->json(['day' => $day]);
     }
 
-    // DELETE /api/days/{day}
+    
     public function destroy(Request $request, ItineraryDay $day)
     {
         $trip = $day->trip;

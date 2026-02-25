@@ -12,100 +12,29 @@ use Illuminate\Support\Facades\Http;
 
 class AiPlanController extends Controller
 {
-    public function generate(Request $request)
-    {
-        try {
-            $data = $request->validate([
-                'destination' => ['required','string','max:255'],
-                'days' => ['required','integer','min:1','max:21'],
-                'budget' => ['nullable','numeric','min:0'],
-                'pace' => ['nullable','in:lagano,normalno,brzo'],
-                'interests' => ['nullable','array'],
-                'interests.*' => ['string','max:50'],
-                'trip_id' => ['nullable','integer','exists:trips,id'],
-            ]);
-
-            $trip = null;
-            if (!empty($data['trip_id'])) {
-                $trip = Trip::find($data['trip_id']);
-
-                // IMPORTANT: ako nema auth middleware, user može biti null
-                $user = $request->user();
-                if (!$user) {
-                    abort(401, 'Niste prijavljeni.');
-                }
-
-                if ($trip && $trip->user_id !== $user->id) {
-                    abort(403, 'Ne možeš generisati plan za tuđe putovanje.');
-                }
-            }
-
-            $promptJson = [
-                'destination' => $data['destination'],
-                'days' => (int) $data['days'],
-                'budget' => $data['budget'] ?? null,
-                'pace' => $data['pace'] ?? 'normalno',
-                'interests' => $data['interests'] ?? [],
-            ];
-
-            $plan = $this->generatePlanFromGemini($promptJson);
-
-            $user = $request->user();
-            if (!$user) {
-                abort(401, 'Niste prijavljeni.');
-            }
-
-            $log = AiGeneration::create([
-                'user_id' => $user->id,
-                'trip_id' => $trip?->id,
-                'prompt_json' => $promptJson,
-                'result_json' => $plan,
-                'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
-            ]);
-
-            return response()->json([
-                'message' => 'Plan generisan.',
-                'ai_generation_id' => $log->id,
-                'plan' => $plan,
-            ], 201);
-
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ], 500);
-        }
-    }
-
     public function planAndApply(Request $request)
     {
         try {
             $data = $request->validate([
                 'trip_id' => ['required','integer','exists:trips,id'],
-
                 'destination' => ['required','string','max:255'],
                 'days' => ['required','integer','min:1','max:21'],
                 'budget' => ['nullable','numeric','min:0'],
                 'pace' => ['nullable','in:lagano,normalno,brzo'],
                 'interests' => ['nullable','array'],
                 'interests.*' => ['string','max:50'],
-
                 'replace' => ['nullable','boolean'],
             ]);
 
             $user = $request->user();
-            if (!$user) {
-                abort(401, 'Niste prijavljeni.');
-            }
+            if (!$user) abort(401, 'Niste prijavljeni.');
 
             $trip = Trip::findOrFail($data['trip_id']);
-
             if ($trip->user_id !== $user->id) {
                 abort(403, 'Ne možeš primijeniti AI plan na tuđe putovanje.');
             }
 
-            $replace = $data['replace'] ?? false;
+            $replace = (bool)($data['replace'] ?? false);
 
             $promptJson = [
                 'destination' => $data['destination'],
@@ -119,6 +48,7 @@ class AiPlanController extends Controller
 
             $result = DB::transaction(function () use ($user, $trip, $replace, $promptJson, $plan) {
 
+
                 $log = AiGeneration::create([
                     'user_id' => $user->id,
                     'trip_id' => $trip->id,
@@ -126,6 +56,7 @@ class AiPlanController extends Controller
                     'result_json' => $plan,
                     'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
                 ]);
+
 
                 if ($replace && isset($plan['description'])) {
                     $trip->update(['description' => $plan['description']]);
@@ -138,6 +69,7 @@ class AiPlanController extends Controller
                     }
                     $trip->days()->delete();
                 }
+
 
                 foreach (($plan['days'] ?? []) as $dayData) {
                     $dayIndex = (int) ($dayData['day'] ?? 1);
@@ -178,8 +110,6 @@ class AiPlanController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ], 500);
         }
     }
@@ -187,13 +117,10 @@ class AiPlanController extends Controller
     private function generatePlanFromGemini(array $promptJson): array
     {
         $apiKey = env('GEMINI_API_KEY');
-        if (!$apiKey) {
-            abort(500, 'GEMINI_API_KEY nije postavljen u .env');
-        }
+        if (!$apiKey) abort(500, 'GEMINI_API_KEY nije postavljen u .env');
 
         $model = env('GEMINI_MODEL', 'gemini-flash-latest');
         $url = "https://generativelanguage.googleapis.com/v1/models/{$model}:generateContent?key={$apiKey}";
-
 
         $prompt = "Ti si travel planner. Vrati ISKLJUČIVO validan JSON bez dodatnog teksta.
 Struktura JSON:
@@ -224,20 +151,18 @@ Ulazni podaci: " . json_encode($promptJson, JSON_UNESCAPED_UNICODE);
             ]);
 
         if (!$res->successful()) {
-    abort(500, 'Gemini error: HTTP ' . $res->status() . ' | ' . $res->body());
-}
-
+            abort(500, 'Gemini error: HTTP ' . $res->status() . ' | ' . $res->body());
+        }
 
         $text = trim((string) $res->json('candidates.0.content.parts.0.text'));
 
+        // očisti ako Gemini vrati ```json ... ```
         $text = preg_replace('/^```json\s*/', '', $text);
         $text = preg_replace('/^```\s*/', '', $text);
         $text = preg_replace('/\s*```$/', '', $text);
 
         $plan = json_decode($text, true);
-        if (!is_array($plan)) {
-            abort(422, 'Gemini nije vratio validan JSON.');
-        }
+        if (!is_array($plan)) abort(422, 'Gemini nije vratio validan JSON.');
 
         return $plan;
     }
@@ -248,19 +173,9 @@ Ulazni podaci: " . json_encode($promptJson, JSON_UNESCAPED_UNICODE);
 
         $t = trim($time);
 
-        if (preg_match('/^\d{1}:\d{2}$/', $t)) return '0' . $t;
-        if (preg_match('/^\d{2}:\d{2}$/', $t)) return $t;
+        if (preg_match('/^\d{1}:\d{2}$/', $t)) return '0' . $t; // 9:30 -> 09:30
+        if (preg_match('/^\d{2}:\d{2}$/', $t)) return $t;      // 09:30
 
         return null;
     }
-    public function listGeminiModels()
-{
-    $apiKey = env('GEMINI_API_KEY');
-    $res = Http::acceptJson()->get(
-        "https://generativelanguage.googleapis.com/v1/models?key={$apiKey}"
-    );
-
-    return response()->json($res->json(), $res->status());
-}
-
 }

@@ -53,17 +53,17 @@ Route::middleware('auth:sanctum')->group(function () {
     
 });
 
-Route::middleware(['auth:sanctum', 'role:admin,super_admin'])
+Route::middleware(['auth:sanctum', 'check_role:admin,super_admin'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index']);
-        Route::get('/users', [AdminUsersController::class, 'index']); // admin vidi user list
+        Route::get('/users', [AdminUsersController::class, 'index']);
     });
 
-Route::middleware(['auth:sanctum', 'role:super_admin'])
+Route::middleware(['auth:sanctum', 'check_role:super_admin'])
     ->prefix('super-admin')
     ->group(function () {
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index']);
-        Route::post('/users/{user}/roles', [SuperAdminRolesController::class, 'sync']); // superadmin dodjeljuje role
-         Route::delete('/users/{user}', [SuperAdminRolesController::class, 'destroy']);
+        Route::patch('/users/{user}/roles', [SuperAdminRolesController::class, 'sync']);
+        Route::delete('/users/{user}', [SuperAdminRolesController::class, 'destroy']);
     });

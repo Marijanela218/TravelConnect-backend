@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Storage;
 
 class TripController extends Controller
 {
-    // GET /api/trips
+    
     public function index(Request $request)
     {
         $userId = $request->user()->id;
 
         $trips = Trip::query()
-            ->with('user:id,username') // ko je vlasnik
+            ->with('user:id,username') 
             ->where('user_id', $userId)
             ->orWhere('is_public', true)
             ->orderByDesc('id')
@@ -24,7 +24,7 @@ class TripController extends Controller
         return response()->json(['trips' => $trips]);
     }
 
-    // POST /api/trips
+    
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -53,7 +53,7 @@ class TripController extends Controller
         return response()->json(['trip' => $trip], 201);
     }
 
-    // GET /api/trips/{trip}
+    
     public function show(Trip $trip)
     {
         $trip->load([
@@ -64,7 +64,7 @@ class TripController extends Controller
         return response()->json(['trip' => $trip]);
     }
 
-    // PUT /api/trips/{trip}
+    
     public function update(Request $request, Trip $trip)
     {
         $this->authorizeOwnerOrAdmin($request, $trip);
@@ -97,7 +97,7 @@ class TripController extends Controller
         return response()->json(['trip' => $trip]);
     }
 
-    // DELETE /api/trips/{trip}
+    
     public function destroy(Request $request, Trip $trip)
     {
         $this->authorizeOwnerOrAdmin($request, $trip);
@@ -116,7 +116,7 @@ class TripController extends Controller
 
     private function authorizeOwnerOrAdmin(Request $request, Trip $trip): void
 {
-    $user = $request->user()->loadMissing('roles:id,name'); // ✅ učitaj roles ako nisu
+    $user = $request->user()->loadMissing('roles:id,name'); 
 
     $isOwner = $trip->user_id === $user->id;
 

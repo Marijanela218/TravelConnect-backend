@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class LikeController extends Controller
 {
-    // POST /api/posts/{post}/like
+    
     public function toggle(Request $request, TripPost $post)
 {
     $userId = $request->user()->id;
