@@ -64,6 +64,6 @@ Route::middleware(['auth:sanctum', 'check_role:super_admin'])
     ->prefix('super-admin')
     ->group(function () {
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index']);
-        Route::patch('/users/{user}/roles', [SuperAdminRolesController::class, 'sync']);
+        Route::post('/users/{user}/roles', [SuperAdminRolesController::class, 'sync']);
         Route::delete('/users/{user}', [SuperAdminRolesController::class, 'destroy']);
     });
